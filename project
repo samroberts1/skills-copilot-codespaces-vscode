@@ -1,0 +1,39 @@
+# Install necessary packages (only run once)
+install.packages("readxl")
+install.packages("lmtest")
+install.packages("car")
+
+# Load required libraries
+library(readxl)
+library(lmtest)
+library(car)
+
+# Load dataset from Excel
+data <- read_excel("data.xlsx")
+
+# Convert date column to Date format
+data$ref_date <- as.Date(data$ref_date)
+
+# Compute log returns
+data <- data %>%
+  group_by(ticker) %>%
+  mutate(log_return = log(price_close / lag(price_close)) * 100)
+
+# Compute excess returns
+data$excess_return <- data$log_return - data$RF
+
+# Run Fama-French 3-Factor Model for each stock
+model <- lm(excess_return ~ Mkt-RF + SMB + HML, data = data)
+
+# Summary of regression (t-test results included)
+summary(model)
+
+# Perform F-test
+anova(model)
+
+# Perform Durbin-Watson (DW) test for autocorrelation
+dwtest(model)
+
+# Perform White test for heteroskedasticity
+bptest(model)
+
